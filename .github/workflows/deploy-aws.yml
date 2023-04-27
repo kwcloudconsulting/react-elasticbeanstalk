@@ -1,27 +1,43 @@
-name: Deploy master
+name: Deploy to Elastic Beanstalk
+
 on:
   push:
     branches:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
 
       - name: Generate deployment package
-        run: zip -r deploy.zip . -x '*.git*'
+        run: |
+          cd build
+          zip -r ../deploy.zip .
 
-      - name: Deploy to EB
-        uses: einaregilsson/beanstalk-deploy@v21
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: React-Elasticbeanstalk
-          environment_name: React-Elasticbeanstalk-env
-          version_label: ${{ github.sha }}
-          existing_bucket_name: elasticbeanstalk-us-east-1-596723386663
-          region: us-east-1
-          deployment_package: deploy.zip
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name React-Elasticbeanstalk \
+            --version-label ${{ github.sha }} \
+            --source-bundle S3Bucket=elasticbeanstalk-us-east-1-596723386663,S3Key=deploy.zip
+          aws elasticbeanstalk update-environment \
+            --application-name my-app \
+            --environment-name my-env \
+            --version-label ${{ github.sha }}
+        timeout-minutes: 10
