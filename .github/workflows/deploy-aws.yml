@@ -37,7 +37,7 @@ jobs:
             --version-label ${{ github.sha }} \
             --source-bundle S3Bucket=elasticbeanstalk-us-east-1-596723386663,S3Key=deploy.zip
           aws elasticbeanstalk update-environment \
-            --application-name my-app \
-            --environment-name my-env \
+            --application-name React-Elasticbeanstalk \
+            --environment-name React-Elasticbeanstalk-env \
             --version-label ${{ github.sha }}
         timeout-minutes: 10
